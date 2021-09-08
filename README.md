@@ -3,6 +3,8 @@
 warning: govnocode detected
 
 ## Эффект сети для Delphi/FMX  
+* ЛКМ - добавить точку по координатам курсора
+* ПКМ - удалить последнюю точку
 ### Windows:
 Скачать exe: https://github.com/crazzzypeter/NetEffectFMX/blob/main/NetEffect.exe?raw=true
 ![scr.png](scr.png)
