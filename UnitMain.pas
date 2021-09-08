@@ -1,4 +1,4 @@
-// govnocode detected
+п»ї// govnocode detected
 unit UnitMain;
 
 interface
@@ -33,11 +33,11 @@ type
     procedure PaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Single);
   private const
-    // размер точки
+    // СЂР°Р·РјРµСЂ С‚РѕС‡РєРё
     PointSize = 5;
-    // расстояние начала фейда
+    // СЂР°СЃСЃС‚РѕСЏРЅРёРµ РЅР°С‡Р°Р»Р° С„РµР№РґР°
     DefaultFadeDistance = 200;
-    // количество точек
+    // РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє
     DefaultPointCount = 45;
   private
     Points: array of TNetPoint;
@@ -64,11 +64,11 @@ function TFormMain.MakeNetPoint(const X, Y: Double): TNetPoint;
 var
   Angle: Double;
 begin
-  // координаты
+  // РєРѕРѕСЂРґРёРЅР°С‚С‹
   Result.X := X;
   Result.Y := Y;
 
-  // скорость по горизонтали/вертикали
+  // СЃРєРѕСЂРѕСЃС‚СЊ РїРѕ РіРѕСЂРёР·РѕРЅС‚Р°Р»Рё/РІРµСЂС‚РёРєР°Р»Рё
   Angle := Random * 2 * Pi;
   Result.Dx := Cos(Angle) * 4;
   Result.Dy := Sin(Angle) * 4;
@@ -95,7 +95,7 @@ begin
   HueTrackBarLinesColor.Value := 0.79;
   HueTrackBarPointsColor.Value := 0.6;
 
-  // генерируем точки
+  // РіРµРЅРµСЂРёСЂСѓРµРј С‚РѕС‡РєРё
   SetLength(Points, DefaultPointCount);
   for I := 0 to High(Points) do
   begin
@@ -131,7 +131,7 @@ var
   Fade: Double;
   LineCount: Integer;
 begin
-  // рисуем линии
+  // СЂРёСЃСѓРµРј Р»РёРЅРёРё
   Canvas.Stroke.Color := LineColor;
   Canvas.Stroke.Kind := TBrushKind.Solid;
   LineCount := 0;
@@ -142,13 +142,13 @@ begin
       Point1 := TPointF.Create(Points[I].X, Points[I].Y);
       Point2 := TPointF.Create(Points[J].X, Points[J].Y);
 
-      // вычисляем расстояние между линиями в -00 -> 0..1
+      // РІС‹С‡РёСЃР»СЏРµРј СЂР°СЃСЃС‚РѕСЏРЅРёРµ РјРµР¶РґСѓ Р»РёРЅРёСЏРјРё РІ -00 -> 0..1
       Fade := -(Point1.Distance(Point2) - FadeDistance) / FadeDistance;
 
-      // если фейд положителен рисуем
+      // РµСЃР»Рё С„РµР№Рґ РїРѕР»РѕР¶РёС‚РµР»РµРЅ СЂРёСЃСѓРµРј
       if Fade > 0 then
       begin
-        // толщина
+        // С‚РѕР»С‰РёРЅР°
         Canvas.Stroke.Thickness := Fade * 5 + 1;
         // draw ...
         Canvas.DrawLine(
@@ -161,7 +161,7 @@ begin
     end;
   end;
 
-  // рисуем точки поверх линий
+  // СЂРёСЃСѓРµРј С‚РѕС‡РєРё РїРѕРІРµСЂС… Р»РёРЅРёР№
   Canvas.Fill.Color := PointColor;
   Canvas.Fill.Kind := TBrushKind.Solid;
   for Point in Points do
@@ -191,11 +191,11 @@ var
 begin
   for I := 0 to High(Points) do
   begin
-    // перемещаем точку в соответсвии со скоростью
+    // РїРµСЂРµРјРµС‰Р°РµРј С‚РѕС‡РєСѓ РІ СЃРѕРѕС‚РІРµС‚СЃРІРёРё СЃРѕ СЃРєРѕСЂРѕСЃС‚СЊСЋ
     Points[I].X := Points[I].X + Points[I].Dx;
     Points[I].Y := Points[I].Y + Points[I].Dy;
 
-    // обрабатываем вылет за экран
+    // РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј РІС‹Р»РµС‚ Р·Р° СЌРєСЂР°РЅ
     if Points[I].X < 0 then
       Points[I].Dx := Abs(Points[I].Dx);
     if Points[I].X > PaintBox.LocalRect.Width then
