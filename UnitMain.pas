@@ -119,7 +119,7 @@ begin
     SetLength(Points, Length(Points) + 1);
     Points[High(Points)] := MakeNetPoint(X, Y);
   end
-  else if Length(Points) > 10 then
+  else if (Length(Points) > 10) and (Button = TMouseButton.mbRight) then
     SetLength(Points, Length(Points) - 1);
 end;
 
