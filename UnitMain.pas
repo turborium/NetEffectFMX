@@ -6,7 +6,8 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Objects,
-  FMX.StdCtrls, FMX.Colors, FMX.Controls.Presentation;
+  FMX.StdCtrls, FMX.Colors, FMX.Controls.Presentation, FMX.Effects,
+  FMX.Filter.Effects;
 
 type
   TNetPoint = record
@@ -17,24 +18,35 @@ type
   TFormMain = class(TForm)
     TimerAnimate: TTimer;
     PaintBox: TPaintBox;
-    Panel1: TPanel;
+    Panel: TPanel;
     HueTrackBarLinesColor: THueTrackBar;
     HueTrackBarPointsColor: THueTrackBar;
     TrackBarStartFadeDistance: TTrackBar;
-    Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
     StyleBook: TStyleBook;
+    LabelLineCount: TLabel;
+    Label4: TLabel;
     procedure TimerAnimateTimer(Sender: TObject);
     procedure PaintBoxPaint(Sender: TObject; Canvas: TCanvas);
     procedure FormCreate(Sender: TObject);
+    procedure PaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Single);
   private const
     // размер точки
-    Size = 5;
+    PointSize = 5;
     // расстояние начала фейда
-    MinFadeDistance = 200;
+    DefaultFadeDistance = 200;
+    // количество точек
+    DefaultPointCount = 45;
   private
     Points: array of TNetPoint;
+    function PointColor: TAlphaColor;
+    function LineColor: TAlphaColor;
+    function FadeDistance: Double;
+    function MakeNetPoint(const X, Y: Double): TNetPoint;
+  protected
+    procedure ApplyStyleLookup; override;
   public
   end;
 
@@ -48,28 +60,67 @@ uses
 
 {$R *.fmx}
 
+function TFormMain.MakeNetPoint(const X, Y: Double): TNetPoint;
+var
+  Angle: Double;
+begin
+  // координаты
+  Result.X := X;
+  Result.Y := Y;
+
+  // скорость по горизонтали/вертикали
+  Angle := Random * 2 * Pi;
+  Result.Dx := Cos(Angle) * 4;
+  Result.Dy := Sin(Angle) * 4;
+end;
+
+procedure TFormMain.ApplyStyleLookup;
+begin
+  inherited;
+  Panel.Height := HueTrackBarPointsColor.BoundsRect.Bottom +
+    HueTrackBarPointsColor.Margins.Bottom;
+end;
+
+function TFormMain.FadeDistance: Double;
+begin
+  Result := TrackBarStartFadeDistance.Value
+end;
+
 procedure TFormMain.FormCreate(Sender: TObject);
 var
   I: Integer;
-  Angle: Double;
 begin
-  TrackBarStartFadeDistance.Value := MinFadeDistance;
+  ApplyStyleLookup;
+  TrackBarStartFadeDistance.Value := DefaultFadeDistance;
   HueTrackBarLinesColor.Value := 0.79;
   HueTrackBarPointsColor.Value := 0.6;
 
   // генерируем точки
-  SetLength(Points, 50);
+  SetLength(Points, DefaultPointCount);
   for I := 0 to High(Points) do
   begin
-    // координаты
-    Points[I].X := Random * PaintBox.LocalRect.Width;
-    Points[I].Y := Random * PaintBox.LocalRect.Height;
-
-    // скорость по горизонтали/вертикали
-    Angle := Random * 2 * Pi;
-    Points[I].Dx := Cos(Angle) * 4;
-    Points[I].Dy := Sin(Angle) * 4;
+    Points[I] := MakeNetPoint(
+      Random * PaintBox.LocalRect.Width,
+      Random * PaintBox.LocalRect.Height
+    );
   end;
+end;
+
+function TFormMain.LineColor: TAlphaColor;
+begin
+  Result := HSLtoRGB(HueTrackBarLinesColor.Value, 0.9, 0.7);
+end;
+
+procedure TFormMain.PaintBoxMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Single);
+begin
+  if (Length(Points) < 100) and (Button = TMouseButton.mbLeft) then
+  begin
+    SetLength(Points, Length(Points) + 1);
+    Points[High(Points)] := MakeNetPoint(X, Y);
+  end
+  else if Length(Points) > 10 then
+    SetLength(Points, Length(Points) - 1);
 end;
 
 procedure TFormMain.PaintBoxPaint(Sender: TObject; Canvas: TCanvas);
@@ -81,7 +132,7 @@ var
   LineCount: Integer;
 begin
   // рисуем линии
-  Canvas.Stroke.Color := HSLtoRGB(HueTrackBarLinesColor.Value, 0.9, 0.7);//;;TAlphaColorF.Create(0.8, 0.0, 1.0, 1.0).ToAlphaColor;
+  Canvas.Stroke.Color := LineColor;
   Canvas.Stroke.Kind := TBrushKind.Solid;
   LineCount := 0;
   for I := 0 to High(Points) do
@@ -92,8 +143,7 @@ begin
       Point2 := TPointF.Create(Points[J].X, Points[J].Y);
 
       // вычисляем расстояние между линиями в -00 -> 0..1
-      Fade := -(Point1.Distance(Point2) -
-        TrackBarStartFadeDistance.Value) / TrackBarStartFadeDistance.Value;
+      Fade := -(Point1.Distance(Point2) - FadeDistance) / FadeDistance;
 
       // если фейд положителен рисуем
       if Fade > 0 then
@@ -112,22 +162,27 @@ begin
   end;
 
   // рисуем точки поверх линий
-  Canvas.Fill.Color := HSLtoRGB(HueTrackBarPointsColor.Value, 0.9, 0.7);
+  Canvas.Fill.Color := PointColor;
   Canvas.Fill.Kind := TBrushKind.Solid;
   for Point in Points do
   begin
     Canvas.FillEllipse(
       TRectF.Create(
-        Point.X - Size,
-        Point.Y - Size,
-        Point.X + Size,
-        Point.Y + Size
+        Point.X - PointSize,
+        Point.Y - PointSize,
+        Point.X + PointSize,
+        Point.Y + PointSize
       ),
       1.0
     );
   end;
 
-  Caption := 'Line count: ' + LineCount.ToString;
+  LabelLineCount.Text := 'Line count: ' + LineCount.ToString;
+end;
+
+function TFormMain.PointColor: TAlphaColor;
+begin
+  Result := HSLtoRGB(HueTrackBarPointsColor.Value, 0.9, 0.7);
 end;
 
 procedure TFormMain.TimerAnimateTimer(Sender: TObject);
